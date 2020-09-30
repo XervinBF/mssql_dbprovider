@@ -39,7 +39,7 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 		
 	}
 
-	public void createTable(String tableName, HashMap<String, String> fields) {
+	public void createTable(String tableName, HashMap<String, String> fields) throws Exception {
 		char separator = '"';
 		String sql = "CREATE TABLE " + separator + tableName + separator + " (";
 		for (String fieldName : fields.keySet()) {
@@ -56,7 +56,7 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 		update(sql);
 	}
 
-	public void addFieldToTable(String table, String fieldName, String fieldType) {
+	public void addFieldToTable(String table, String fieldName, String fieldType) throws Exception {
 		String query = "ALTER TABLE " + table + " ADD \"" + fieldName + "\" " + fieldType + " NULL";
 		if (!fieldType.equalsIgnoreCase("int")) {
 			query += " DEFAULT (NULL)";
@@ -161,7 +161,7 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 		return false;
 	}
 
-	public void insertData(String table, HashMap<String, String> set) {
+	public void insertData(String table, HashMap<String, String> set) throws Exception {
 		ArrayList<String> vals = new ArrayList<String>();
 		ArrayList<String> data = new ArrayList<String>();
 		for (String f : set.keySet()) {
@@ -171,7 +171,7 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 		update("INSERT INTO " + table + " (" + String.join(",", vals) + ") VALUES ('" + String.join("','", data) + "');");
 	}
 
-	public void updateData(String table, HashMap<String, String> set, HashMap<String, String> where) {
+	public void updateData(String table, HashMap<String, String> set, HashMap<String, String> where) throws Exception {
 		String vals = "";
 		for (String key : set.keySet()) {
 			vals += key + "='" + set.get(key) + "',";
@@ -181,7 +181,7 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 		update("UPDATE " + table + " SET " + vals + " WHERE " + buildWhere(where));
 	}
 
-	public void delete(String table, HashMap<String, String> where) {
+	public void delete(String table, HashMap<String, String> where) throws Exception {
 		update("DELETE FROM " + table + " WHERE " + buildWhere(where));
 	}
 	
@@ -191,40 +191,43 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 		return exceptionMessage.startsWith("Invalid object name");
 	}
 
+	// Invalid column name 'userid'
 	public boolean shouldAddField(String exceptionMessage) {
-		return exceptionMessage.startsWith("The column name ") && exceptionMessage.endsWith(" is not valid.");
+		return exceptionMessage.startsWith("Invalid column name ");
 	}
 	
 	String buildWhere(HashMap<String, String> where) {
 		String str = "";
+		String separator = " AND ";
 		for (String key : where.keySet()) {
-			str += key + "='" + where.get(key) + "'";
+			str += key + "='" + where.get(key) + "'" + separator;
 		}
-		return str;
+		return str.substring(0, str.length() - separator.length());
 	}
 	
 	
 	
 	ResultSet query(String query) throws SQLException {
 		try {
+			logger.trace("SQL [QUERY]: " + query);
 			PreparedStatement ps = con.prepareStatement(query);
 			ResultSet set = ps.executeQuery();
 			return set;
 		} catch (SQLException e) {
-			logger.error("SQL Exception on query: " + query);
-			e.printStackTrace();
+			logger.error("SQL Exception on query: " + query, e);
 			throw e;
 		}
 	}
 	
-	 void update(String query) {
+	 void update(String query) throws Exception {
         PreparedStatement ps;
 		try {
+			logger.trace("SQL [UPDATE]: " + query);
 			ps = con.prepareStatement(query);
 	        ps.executeUpdate();
 		} catch (Exception e) {
-			logger.error("SQL Exception on query: " + query);
-			e.printStackTrace();
+			logger.error("SQL Exception on query: " + query,e);
+			throw e;
 		}
 	}
 	
