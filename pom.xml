@@ -17,8 +17,8 @@
 
 		<dependency>
 			<groupId>com.github.XervinBF</groupId>
-			<artifactId>Xervin5</artifactId>
-			<version>5.0.7</version>
+			<artifactId>xbf-core</artifactId>
+			<version>0.0.7</version>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->

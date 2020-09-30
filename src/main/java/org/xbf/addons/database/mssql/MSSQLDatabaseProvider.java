@@ -7,14 +7,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.Exchanger;
 
 import org.slf4j.LoggerFactory;
-import org.xbf.Xervin5.Config.XDBConfig;
-import org.xbf.Xervin5.Data.Connector.DBResult;
-import org.xbf.Xervin5.Data.Connector.DbType;
-import org.xbf.Xervin5.Data.Connector.IDBProvider;
-import org.xbf.Xervin5.Utils.Map.FastMap;
+import org.xbf.core.Config.XDBConfig;
+import org.xbf.core.Data.Connector.DBResult;
+import org.xbf.core.Data.Connector.DbType;
+import org.xbf.core.Data.Connector.IDBProvider;
+import org.xbf.core.Utils.Map.FastMap;
 
 import ch.qos.logback.classic.Logger;
 
