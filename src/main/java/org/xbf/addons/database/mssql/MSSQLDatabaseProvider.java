@@ -21,22 +21,22 @@ import ch.qos.logback.classic.Logger;
 public class MSSQLDatabaseProvider implements IDBProvider {
 
 	static final Logger logger = (Logger) LoggerFactory.getLogger(MSSQLDatabaseProvider.class);
-	
-    Connection con = null;
-	
+
+	Connection con = null;
+
 	public void openConnection(XDBConfig config) {
 		try {
 			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 		} catch (ClassNotFoundException e) {
 			logger.error("MSSQL Driver not found", e);
 		}
-        try {
+		try {
 			con = DriverManager.getConnection("jdbc:sqlserver://" + config.connectionString);
 		} catch (SQLException e) {
 			con = null;
 			e.printStackTrace();
 		}
-		
+
 	}
 
 	public void createTable(String tableName, HashMap<String, String> fields) throws Exception {
@@ -71,7 +71,7 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 
 		case "String":
 			return "VARCHAR(" + getMaxValueForField("VARCHAR") + ")";
-			
+
 		case "boolean":
 			return "VARCHAR(5)"; // true - 4 characters, false - 5 characters
 
@@ -90,24 +90,20 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 		}
 	}
 
-	public HashMap<String, String> getFields(String table) {
+	public HashMap<String, String> getFields(String table) throws Exception {
 		FastMap<String, String> map = new FastMap<String, String>();
 		String query = "SELECT \r\n" + "    c.name 'Column Name',\r\n" + "    t.Name 'Data type',\r\n"
 				+ "    c.max_length 'Max Length',\r\n" + "    c.precision ,\r\n" + "    c.scale ,\r\n"
 				+ "    c.is_nullable,\r\n" + "    ISNULL(i.is_primary_key, 0) 'Primary Key'\r\n" + "FROM    \r\n"
-				+ "    sys.columns c\r\n" + "INNER JOIN \r\n"
-				+ "    sys.types t ON c.user_type_id = t.user_type_id\r\n" + "LEFT OUTER JOIN \r\n"
+				+ "    sys.columns c\r\n" + "INNER JOIN \r\n" + "    sys.types t ON c.user_type_id = t.user_type_id\r\n"
+				+ "LEFT OUTER JOIN \r\n"
 				+ "    sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.column_id\r\n"
 				+ "LEFT OUTER JOIN \r\n"
 				+ "    sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id\r\n" + "WHERE\r\n"
 				+ "    c.object_id = OBJECT_ID('" + table + "')";
-		try {
-			ResultSet r = query(query);
-			while (r.next()) {
-				map.add(r.getString(1), r.getString(2));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+		ResultSet r = query(query);
+		while (r.next()) {
+			map.add(r.getString(1), r.getString(2));
 		}
 		return map.getMap();
 	}
@@ -125,40 +121,35 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 
 	}
 
-	public DBResult getData(String table, ArrayList<String> fieldsToGet, HashMap<String, String> where) throws Exception {
-		return DBResult.fromResultSet(query("SELECT " + String.join(", ", fieldsToGet) + " FROM " + table + " WHERE " + buildWhere(where)));
+	public DBResult getData(String table, ArrayList<String> fieldsToGet, HashMap<String, String> where)
+			throws Exception {
+		return DBResult.fromResultSet(
+				query("SELECT " + String.join(", ", fieldsToGet) + " FROM " + table + " WHERE " + buildWhere(where)));
 	}
 
 	public DBResult getData(String table, HashMap<String, String> where, int limit) throws Exception {
-		return DBResult.fromResultSet(query("SELECT TOP(" + limit + ") * FROM " + table + " WHERE " + buildWhere(where)));
+		return DBResult
+				.fromResultSet(query("SELECT TOP(" + limit + ") * FROM " + table + " WHERE " + buildWhere(where)));
 
 	}
 
-	public DBResult getData(String table, ArrayList<String> fieldsToGet, HashMap<String, String> where, int limit) throws Exception {
-		return DBResult.fromResultSet(query("SELECT TOP(" + limit + ") " + String.join(", ", fieldsToGet) + " FROM " + table + " WHERE " + buildWhere(where)));
+	public DBResult getData(String table, ArrayList<String> fieldsToGet, HashMap<String, String> where, int limit)
+			throws Exception {
+		return DBResult.fromResultSet(query("SELECT TOP(" + limit + ") " + String.join(", ", fieldsToGet) + " FROM "
+				+ table + " WHERE " + buildWhere(where)));
 	}
 
-	public int getMax(String table, String field) {
-		try {
-			ResultSet s = query("SELECT MAX(" + field + ") FROM " + table);
-			s.next();
-			return s.getInt(1);
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return 0;
-		}
+	public int getMax(String table, String field) throws Exception {
+		ResultSet s = query("SELECT MAX(" + field + ") FROM " + table);
+		s.next();
+		return s.getInt(1);
 	}
 
-	public boolean has(String table, HashMap<String, String> where) {
-		try {
-			ResultSet r = query("SELECT count(*) FROM " + table + " WHERE " + buildWhere(where) + ";");
-			r.next();
-			int re = r.getInt(1);
-			return re != 0;
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
+	public boolean has(String table, HashMap<String, String> where) throws Exception {
+		ResultSet r = query("SELECT count(*) FROM " + table + " WHERE " + buildWhere(where) + ";");
+		r.next();
+		int re = r.getInt(1);
+		return re != 0;
 	}
 
 	public void insertData(String table, HashMap<String, String> set) throws Exception {
@@ -168,7 +159,8 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 			vals.add(f);
 			data.add(set.get(f));
 		}
-		update("INSERT INTO " + table + " (" + String.join(",", vals) + ") VALUES ('" + String.join("','", data) + "');");
+		update("INSERT INTO " + table + " (" + String.join(",", vals) + ") VALUES ('" + String.join("','", data)
+				+ "');");
 	}
 
 	public void updateData(String table, HashMap<String, String> set, HashMap<String, String> where) throws Exception {
@@ -177,15 +169,13 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 			vals += key + "='" + set.get(key) + "',";
 		}
 		vals = vals.substring(0, vals.length() - 1);
-		
+
 		update("UPDATE " + table + " SET " + vals + " WHERE " + buildWhere(where));
 	}
 
 	public void delete(String table, HashMap<String, String> where) throws Exception {
 		update("DELETE FROM " + table + " WHERE " + buildWhere(where));
 	}
-	
-	
 
 	public boolean shouldCreateTable(String exceptionMessage) {
 		return exceptionMessage.startsWith("Invalid object name");
@@ -195,7 +185,7 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 	public boolean shouldAddField(String exceptionMessage) {
 		return exceptionMessage.startsWith("Invalid column name ");
 	}
-	
+
 	String buildWhere(HashMap<String, String> where) {
 		String str = "";
 		String separator = " AND ";
@@ -204,9 +194,7 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 		}
 		return str.substring(0, str.length() - separator.length());
 	}
-	
-	
-	
+
 	ResultSet query(String query) throws SQLException {
 		try {
 			logger.trace("SQL [QUERY]: " + query);
@@ -218,18 +206,17 @@ public class MSSQLDatabaseProvider implements IDBProvider {
 			throw e;
 		}
 	}
-	
-	 void update(String query) throws Exception {
-        PreparedStatement ps;
+
+	void update(String query) throws Exception {
+		PreparedStatement ps;
 		try {
 			logger.trace("SQL [UPDATE]: " + query);
 			ps = con.prepareStatement(query);
-	        ps.executeUpdate();
+			ps.executeUpdate();
 		} catch (Exception e) {
-			logger.error("SQL Exception on query: " + query,e);
+			logger.error("SQL Exception on query: " + query, e);
 			throw e;
 		}
 	}
-	
-	
+
 }
